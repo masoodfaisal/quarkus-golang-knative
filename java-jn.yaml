@@ -1,0 +1,23 @@
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: java-knative-helloworld
+  namespace: knative-examples
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: quay.io/masood_faisal/jvkn:0.0.2
+
+# apiVersion: serving.knative.dev/v1alpha1
+# kind: Configuration
+# metadata:
+#   name: java-knative-helloworld
+#   namespace: knative-examples
+# spec:
+#   revisionTemplate:
+#     spec:
+#       container:
+#         image: quay.io/masood_faisal/jvkn:0.0.1

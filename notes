@@ -1,0 +1,79 @@
+read: https://knative.dev/docs/install/knative-with-minikube/
+
+minikube start --memory=12000 --cpus=6   --kubernetes-version=v1.15.0  --vm-driver=hyperkit   --disk-size=30g   --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+
+minikube start --memory=12192 --cpus=6    --vm-driver=hyperkit   --disk-size=20g   --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+export ISTIO_VERSION=1.1.7
+export ISTIO_VERSION=1.4.0
+   curl -L https://git.io/getLatestIstio | sh -
+   cd istio-${ISTIO_VERSION}
+
+kubectl create -f istio-system-ns.yaml
+for i in install/kubernetes/helm/istio-init/files/crd*yaml; do kubectl apply -f $i; done
+
+helm template --namespace=istio-system \
+  --set prometheus.enabled=false \
+  --set mixer.enabled=false \
+  --set mixer.policy.enabled=false \
+  --set mixer.telemetry.enabled=false \
+  `# Pilot doesn't need a sidecar.` \
+  --set pilot.sidecar=false \
+  --set pilot.resources.requests.memory=128Mi \
+  `# Disable galley (and things requiring galley).` \
+  --set galley.enabled=false \
+  --set global.useMCP=false \
+  `# Disable security / policy.` \
+  --set security.enabled=false \
+  --set global.disablePolicyChecks=true \
+  `# Disable sidecar injection.` \
+  --set sidecarInjectorWebhook.enabled=false \
+  --set global.proxy.autoInject=disabled \
+  --set global.omitSidecarInjectorConfigMap=true \
+  --set gateways.istio-ingressgateway.autoscaleMin=1 \
+  --set gateways.istio-ingressgateway.autoscaleMax=2 \
+  `# Set pilot trace sampling to 100%` \
+  --set pilot.traceSampling=100 \
+  install/kubernetes/helm/istio \
+  > ./istio-lean.yaml   
+
+kubectl apply --selector knative.dev/crd-install=true \
+--filename https://github.com/knative/serving/releases/download/v0.10.0/serving.yaml \
+--filename https://github.com/knative/eventing/releases/download/v0.10.0/release.yaml \
+--filename https://github.com/knative/serving/releases/download/v0.10.0/monitoring.yaml
+
+
+kubectl apply --filename https://github.com/knative/serving/releases/download/v0.10.0/serving.yaml \
+--filename https://github.com/knative/eventing/releases/download/v0.10.0/release.yaml \
+--filename https://github.com/knative/serving/releases/download/v0.10.0/monitoring.yaml
+
+
+
+  mvn io.quarkus:quarkus-maven-plugin:1.0.1.Final:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=getting-started \
+    -DclassName="org.acme.quickstart.GreetingResource" \
+    -Dpath="/hello"
+
+
+kubectl create ns knative-examples
+ kubectl create -f go-kn.yaml -n knative-examples 
+
+
+ lsof -nP -i4TCP:$PORT | grep LISTEN  
+kubectl label namespace knative-examples   istio-injection=enabled
+
+ kubectl get svc istio-ingressgateway -n istio-system
+ export INGRESS_HOST=$(minikube ip)
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath=’{.spec.ports[?(@.name==”http2")].nodePort}’)export GATEWAY=$INGRESS_HOST:$INGRESS_PORT
+========
+minikube start --memory=12192 --cpus=6    --vm-driver=hyperkit   --disk-size=20g   --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+
+
+INGRESSGATEWAY=istio-ingressgateway
+
+echo $(minikube ip):$(kubectl get svc $INGRESSGATEWAY --namespace istio-system --output 'jsonpath={.spec.ports[?(@.port==80)].nodePort}')
+
+
+ curl -H 'Host: java-knative-helloworld.knative-examples.example.com' 192.168.64.20:31380
+
+ kubectl get cm config-istio -n knative-serving -o yaml

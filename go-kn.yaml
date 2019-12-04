@@ -1,0 +1,23 @@
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: go-knative-helloworld
+  namespace: knative-examples
+spec:
+  runLatest:
+    configuration:
+      revisionTemplate:
+        spec:
+          container:
+            image: quay.io/masood_faisal/gokn:0.0.1
+
+# apiVersion: serving.knative.dev/v1alpha1
+# kind: Configuration
+# metadata:
+#   name: go-knative-helloworld
+#   namespace: knative-examples
+# spec:
+#   revisionTemplate:
+#     spec:
+#       container:
+#         image: quay.io/masood_faisal/gokn:0.0.1
